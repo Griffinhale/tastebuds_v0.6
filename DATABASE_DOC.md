@@ -1,6 +1,8 @@
 # Tastebuds Database Structure
 
-Below is a high-level overview of each table in the **Tastebuds** schema, along with a description of how they interrelate. The overarching design concept is that **shared fields** (title, description, release_date, etc.) live in an **`items`** table, while **medium-specific** fields (for movies, shows, books, games, albums) live in **subtables**. Users can **save** items in their library, **create** platters of items, and **assign** genres to items via join tables.
+Below is a high-level overview of each table in the **Tastebuds** schema, along with a description of how they interrelate. The overarching design concept is that **shared fields** (title, description, release_date, etc.) live in an **`items`** table, while **medium-specific** fields (for movies, shows, books, games, albums) live in **subtables**. Users can **save** items in their library, **create** platters of items, and **assign** genres to items via join tables. 
+
+In addition, we include **optional social features** such as `follows`, `activities`, `reviews`, and `ratings`. These can be added now or in a future iteration.
 
 ---
 
@@ -17,7 +19,8 @@ Holds **core information** for any media type.
   - **One-to-One** with medium-specific tables: `movies`, `shows`, `books`, `games`, `albums` (via `item_id`).  
   - **Many-to-Many** with `genres` through `item_genres`.  
   - **Many-to-Many** with `users` through `user_library`.  
-  - **Many-to-Many** with `platters` through `platter_items`.
+  - **Many-to-Many** with `platters` through `platter_items`.  
+  - **One-to-Many** with `reviews` (if each review links to a single item).
 
 ---
 
@@ -48,12 +51,12 @@ Extends `items` with **TV show–specific** fields.
 ---
 
 ## 4. `books`
-Extends `items` with **book-specific** fields (integrated with Google Books or similar).
+Extends `items` with **book-specific** fields (e.g., from Google Books).
 
 - **Key Columns**:  
   - `item_id` (PK & FK → `items.id`)  
   - `google_volume_id`, `authors`, `publisher`, `page_count`, `categories`, `average_rating`, etc.  
-  - JSON fields for arrays (`authors`, `categories`) or additional metadata
+  - JSON fields (e.g., `authors`, `categories`)
 
 - **Relationships**:  
   - **One-to-One** with `items`.
@@ -61,12 +64,12 @@ Extends `items` with **book-specific** fields (integrated with Google Books or s
 ---
 
 ## 5. `games`
-Extends `items` with **game-specific** fields (IGDB or similar).
+Extends `items` with **game-specific** fields (e.g., from IGDB).
 
 - **Key Columns**:  
   - `item_id` (PK & FK → `items.id`)  
   - `igdb_id`, `summary`, `storyline`, `rating`, `aggregated_rating`, `genres`, `themes`, `platforms`, etc.  
-  - JSON fields for arrays (`game_modes`, `involved_companies`, etc.)
+  - JSON fields for arrays (`game_modes`, `involved_companies`)
 
 - **Relationships**:  
   - **One-to-One** with `items`.
@@ -74,12 +77,12 @@ Extends `items` with **game-specific** fields (IGDB or similar).
 ---
 
 ## 6. `albums`
-Extends `items` with **album-specific** fields (MusicBrainz, Last.fm, etc.).
+Extends `items` with **album-specific** fields (e.g., from MusicBrainz).
 
 - **Key Columns**:  
   - `item_id` (PK & FK → `items.id`)  
-  - `musicbrainz_id` (or `external_id`), `artist`, `label`, `track_count`, JSONB fields for `track_list`, multiple artists, etc.  
-  - Optionally store rating/popularity if the API provides it
+  - `musicbrainz_id`, `artist`, `label`, `track_count`  
+  - JSON fields for track list, multiple artists, etc.
 
 - **Relationships**:  
   - **One-to-One** with `items`.
@@ -87,7 +90,7 @@ Extends `items` with **album-specific** fields (MusicBrainz, Last.fm, etc.).
 ---
 
 ## 7. `genres`
-Stores a **list of genres** (e.g., “Action,” “Romance,” “Rock,” “Sci-Fi”).
+Stores a **list of genres** (e.g., “Action,” “Rock,” “Sci-Fi,” etc.).
 
 - **Key Columns**:  
   - `id` (PK)  
@@ -119,7 +122,10 @@ Stores basic user data.
 
 - **Relationships**:  
   - **Many-to-Many** with `items` via `user_library`.  
-  - **One-to-Many** with `platters` (a user can create multiple platters).
+  - **One-to-Many** with `platters` (a user can have multiple platters).  
+  - **One-to-Many** with `reviews` if you want to link user → review.  
+  - **One-to-Many** with `activities` for user actions.  
+  - **Many-to-Many** with `follows` (user follows another user).
 
 ---
 
@@ -145,8 +151,8 @@ Allows users to create or “curate” **collections** of items, sometimes group
   - `created_at`
 
 - **Relationships**:  
-  - **Many-to-One** with `users` (a user can have multiple platters).  
-  - **Many-to-Many** with `items` through `platter_items`.
+  - **Many-to-One** with `users`  
+  - **Many-to-Many** with `items` via `platter_items`.
 
 ---
 
@@ -163,13 +169,77 @@ Allows users to create or “curate” **collections** of items, sometimes group
 
 ---
 
+## 13. `activities` (Optional Social Feature)
+Logs user actions (e.g., “user X added item Y to platter Z”).
+
+- **Key Columns**:  
+  - `id` (PK)  
+  - `user_id` (FK → `users.id`)  
+  - `item_id` (FK → `items.id`, nullable if the action doesn’t involve a specific item)  
+  - `action_type` (e.g., “searched,” “viewed,” “liked,” “added_to_platter”)  
+  - `created_at` (timestamp)
+
+- **Relationships**:  
+  - **Many-to-One** with `users`  
+  - **Optional Many-to-One** with `items` if the action involves an item.
+
+---
+
+## 14. `follows` (Optional Social Feature)
+Tracks which users follow which other users.
+
+- **Key Columns**:  
+  - `follower_id` (FK → `users.id`)  
+  - `followed_id` (FK → `users.id`)  
+  - `created_at` (timestamp)
+
+- **Composite PK** on (`follower_id`, `followed_id`).  
+- **Relationships**:  
+  - **Many-to-Many** style within `users` (user can follow multiple users, can be followed by multiple users).
+
+---
+
+## 15. `reviews` (Optional Social Feature)
+Users can write textual **reviews** of items.
+
+- **Key Columns**:  
+  - `id` (PK)  
+  - `user_id` (FK → `users.id`)  
+  - `item_id` (FK → `items.id`)  
+  - `content` (TEXT)  
+  - `created_at`, `updated_at`
+
+- **Relationships**:  
+  - **Many-to-One** from `reviews` to `users`  
+  - **Many-to-One** from `reviews` to `items`.
+
+---
+
+## 16. `ratings` (Optional Social Feature)
+Tracks users’ **numeric ratings** of items (e.g., 1–5 stars).
+
+- **Key Columns**:  
+  - `user_id` (FK → `users.id`)  
+  - `item_id` (FK → `items.id`)  
+  - `rating` (e.g., INT or NUMERIC, range 1–5 or 1–10)  
+  - `created_at`, `updated_at`
+
+- **Composite PK** on (`user_id`, `item_id`).  
+- **Relationships**:  
+  - **Many-to-Many** style between `users` and `items` with an additional rating value.
+
+---
+
 ## Relationships in Brief
 
-- **One-to-One**: `items` ↔ (`movies`, `shows`, `books`, `games`, `albums`)  
-- **One-to-Many**: `users` can have many `platters`.  
-- **Many-to-Many**:  
-  - `items` ↔ `genres` (via `item_genres`),  
-  - `items` ↔ `users` (via `user_library`),  
-  - `items` ↔ `platters` (via `platter_items`).
+- **One-to-One**: `items` ↔ (`movies`, `shows`, `books`, `games`, `albums`).  
+- **One-to-Many**: 
+  - `users` → `platters`, `reviews`, `activities`.  
+- **Many-to-Many**: 
+  - `items` ↔ `genres` via `item_genres`;  
+  - `items` ↔ `users` via `user_library`;  
+  - `items` ↔ `platters` via `platter_items`;  
+  - `users` ↔ `users` via `follows` (self-referential many-to-many);  
+  - `users` ↔ `items` via `ratings` (storing a numeric score).
 
-This structure ensures **shared fields** are unified in `items`, while **medium-specific attributes** live in their own tables. Relationships (genres, libraries, platters) are handled by **join tables** to keep data normalized and flexible for future expansions.
+This final design accommodates **search/browse** across multiple media types, user **curation** of items into platters, and additional **social** elements (activities, follows, reviews, ratings) for richer user interaction.
