@@ -120,5 +120,3 @@ We have a **multi-route** Next.js structure that provides clear navigation (`/ho
    
 7. **Create `/detail` Route**  
    - Dynamic child routes based off item id so that detail links can be shared  
-
-By building out these routes, you’ll have **shareable URLs**, **improved SEO**, and a more standard Next.js flow, while still preserving the internal consistency (shared layout, components, and state) that makes Tastebuds feel like a single cohesive application.
