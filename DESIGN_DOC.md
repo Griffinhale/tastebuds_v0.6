@@ -7,7 +7,126 @@
 We are now moving toward a **multi-route** structure in Next.js (App Router) so that each major feature (e.g. search, library, platters) has its own route (e.g. `/search`, `/library`) rather than a single-page setup. This approach improves usability, shareability (unique URLs), and SEO.
 
 ---
+## Explanation of Key Folders
 
+1. **`components/all`**  
+   - **`AuthModal.tsx`**: The login/signup modal (integrating with Supabase Auth).  
+   - **`Header.tsx`, `HeaderButtonSingle.tsx`, `HeaderButtonDouble.tsx`, `HeaderButtons.tsx`**: Navigation and button components for the site header.  
+   - **`HeaderUserInfo.tsx`** / **`HeaderUserInfoSimplified.tsx`**: Displays user info, handles logout, or shows auth modal.  
+   - **`ContentBox.tsx`**: Generic container or layout box.
+
+2. **`detail/`**  
+   - **`CB_ItemDetail.tsx`**: Main item detail page logic (cover, creator, tracklist, etc.).  
+   - **Subcomponents** (`DetailCoverContainer.tsx`, `DetailCreatorContainer.tsx`, etc.) that make up the detail view.
+
+3. **`homepage/`**  
+   - **`CB_Homepage.tsx`**: A main “home” or landing page.  
+   - **`Following.tsx`, `PopularPlatters.tsx`, `TrendingSearches.tsx`**: Sections or modules displayed on the homepage.
+
+4. **`library/`**  
+   - **`CB_Library.tsx`**: The main library page showing user-saved items.  
+   - **`LibraryCategoryContainer.tsx`**, **`LibraryItem.tsx`**: Filtering UI (e.g. “All,” “Movies,” “Albums”) and library item cards.
+
+5. **`platters/`**  
+   - **`CB_Platters.tsx`**: The main page for creating or browsing user platters.  
+   - **`PlatterCategoryContainer.tsx`, `PlatterContainer.tsx`**: Additional UI for platter grouping, displaying, or editing.
+
+6. **`search/`**  
+   - **`CB_Search.tsx`**: The main search page.  
+   - **`SearchFilterContainer.tsx`, `SearchFilteringButton.tsx`**: The UI for toggling search filters (medium, genre, etc.).  
+   - **`SearchContainer.tsx`, `SearchContainerPopup.tsx`**: Potential sub-layout or popup for displaying results.  
+   - **`SearchItem.tsx`, `SearchItemContainer.tsx`**: Components to render individual results.
+
+7. **`context/`**  
+   - **`SelectedPageContext.tsx`**: Previously used to manage which “page” is active in a single-page style.  
+   - As the project moves to multi-route, you may keep or remove this context. It can still be useful for global state.
+
+8. **`utils/supabase/`**  
+   - **`client.ts`**: A **browser**-side Supabase client, created with `createBrowserClient`.  
+   - **`server.ts`**: A **server**-side Supabase client, typically used in server components or route handlers.  
+   - **`middleware.ts`**: If you’re using Next.js middleware for SSR or user session handling, this helps manage cookies.
+
+---
+
+## Multi-Route Design
+
+Each feature (home, search, library, platters, detail, auth, etc.) should have its own **page** under `app/`. For example:
+
+- `app/home/page.tsx` → Renders `<CB_Homepage />`  
+- `app/search/page.tsx` → Renders `<CB_Search />`  
+- `app/library/page.tsx` → Renders `<CB_Library />`  
+- `app/platters/page.tsx` → Renders `<CB_Platters />`  
+- `app/detail/[id]/page.tsx` → Renders `<CB_ItemDetail />` (dynamic route for item IDs)  
+- `app/auth/page.tsx` → Renders `<AuthModal />` or a dedicated signup/login form
+
+You can place a **shared** `layout.tsx` in `app/` for the header, so all routes share the same navigation.
+
+---
+
+## Core Functionality Recap
+
+1. **Header & Navigation**  
+   - The user sees a consistent header with navigation buttons (`Header.tsx`, `HeaderButtons.tsx`).  
+   - A **User Info** component (`HeaderUserInfo.tsx`) handles log in / log out flows (via Supabase).
+
+2. **Search**  
+   - **`CB_Search.tsx`** plus filter components let users find items.  
+   - Could query your local DB and fallback to external APIs if few results are found.  
+   - Displays results in multiple containers by filter combination.
+
+3. **Platters**  
+   - **`CB_Platters.tsx`** for browsing or creating.  
+   - **`PlatterCategoryContainer.tsx`** for selecting (Mine, Saved, Popular, Random).  
+   - **`PlatterContainer.tsx`** for displaying items in “courses.”
+
+4. **Library**  
+   - **`CB_Library.tsx`** shows user-saved items in a grid or list.  
+   - **`LibraryCategoryContainer.tsx`** toggles item mediums.  
+   - **`LibraryItem.tsx`** displays covers, titles.
+
+5. **Item Detail**  
+   - **`CB_ItemDetail.tsx`** shows cover image, description, etc.  
+   - Subcomponents in `detail/` break down the layout (cover, track list, genre tags, etc.).
+
+6. **Auth**  
+   - **`AuthModal.tsx`** provides a minimal sign-up/log-in flow (email/password, or OAuth).  
+   - The user’s session is managed by Supabase (`utils/supabase/client.ts` or `server.ts`).
+
+---
+
+## Database & API
+
+- **Local DB** (Supabase Postgres) storing `items`, medium-specific subtables, user relationships, etc.  
+- **Upsert** external API results (TMDB, Google Books, IGDB, MusicBrainz) into `items` to cache them for future queries.  
+- **Serverless Route** approach (e.g., `app/api/search/route.ts`) to unify local queries + external fetching.
+
+---
+
+## TODO
+
+1. **Create Route Files**  
+   - `app/home/page.tsx` → Render `<CB_Homepage />`.  
+   - `app/search/page.tsx` → Render `<CB_Search />`.  
+   - `app/library/page.tsx` → Render `<CB_Library />`.  
+   - `app/profile/page.tsx` → Could display or edit user data.  
+   - `app/auth/page.tsx` → Render `<AuthModal />` or a dedicated form.  
+   - `app/platters/page.tsx` → Render `<CB_Platters />`.
+
+2. **Hook Up Navigation**  
+   - Update `HeaderButtons.tsx` or `HeaderSimplified.tsx` to link to each route (e.g. “/search”, “/library”, “/platters”) with Next.js `<Link>` components instead of a single-page context.
+
+3. **Implement DB Queries**  
+   - In route handlers (`app/api/...`) or server components, fetch or upsert data as needed.  
+   - Possibly create **`server.ts`** imports for secure DB operations.
+
+4. **Enhance Auth**  
+   - Add sign-up, log-in, or OAuth flows in **`AuthModal.tsx`** or `app/auth/page.tsx`.  
+   - Protect certain routes (e.g. library, platters) with a server-side session check or a client-guard approach.
+
+5. **Detail Routes**  
+   - Consider a dynamic route for item details at `app/detail/[id]/page.tsx`.  
+   - Render `<CB_ItemDetail />`, pulling data from your DB or external sources.
+   
 ## Core Features & Routes
 
 1. **Header & Navigation**  
