@@ -1,6 +1,6 @@
 # Tastebuds Database Structure
 
-Below is a high-level overview of each table in the **Tastebuds** schema, along with a description of how they interrelate. The overarching design concept is that **shared fields** (title, description, release_date, etc.) live in an **`items`** table, while **medium-specific** fields (for movies, shows, books, games, albums) live in **subtables**. Users can **save** items in their library, **create** platters of items, and **assign** genres to items via join tables. 
+Below is a high-level overview of each table in the **Tastebuds** schema, along with a description of how they interrelate. The overarching design concept is that **shared fields** (title, description, release_date, etc.) live in an **`items`** table, while **medium-specific** fields (for movies, shows, books, games, albums) live in **sub-tables**. Users can **save** items in their library, **create** platters of items, and **assign** genres to items via join tables. 
 
 In addition, we include **optional social features** such as `follows`, `activities`, `reviews`, and `ratings`. These can be added now or in a future iteration.
 

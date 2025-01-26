@@ -1,4 +1,4 @@
-# Tastebuds – DESIGN_DOC
+# Tastebuds – Design Document
 
 ## Project Overview & Scope
 
