@@ -1,20 +1,23 @@
 "use client";
 import React from 'react';
 import classNames from 'classnames'; // npm install classnames if not already installed
+import Link from 'next/link';
 
 const HeaderButtonSingle = ({
   label = 'Button',
   isSelected = false,
   onClick = () => {},
+  ButtonDestination = "/home"
 }) => {
   // Base classes that always apply
   const baseClasses = `
     cursor-pointer 
     px-2 py-1 
-    m-1 
+    mx-2 my-1 
     rounded-md 
     transition-colors 
     duration-200 
+    text-sm 
     border-0
   `;
 
@@ -22,6 +25,7 @@ const HeaderButtonSingle = ({
   const unselectedClasses = `
     bg-white
     hover:border-x-2
+    hover:text-xs
     hover:border-black
     text-black
     hover:bg-[#007bbb]
@@ -41,6 +45,7 @@ const HeaderButtonSingle = ({
   );
 
   return (
+    <Link href={ButtonDestination}>
     <button
       type="button"
       className={buttonClasses}
@@ -48,6 +53,7 @@ const HeaderButtonSingle = ({
     >
       {label}
     </button>
+    </Link>
   );
 };
 

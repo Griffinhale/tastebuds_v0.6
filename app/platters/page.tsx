@@ -1,8 +1,8 @@
 "use client";
 
-import CB_Homepage from "./components/homepage/CB_Homepage";
+import CB_Platters from "../components/platters/CB_Platters";
 
-export default function Home() {
+export default function Platters() {
   return (
     <MainPageContent />
   );
@@ -21,10 +21,9 @@ function MainPageContent() {
 }
 
 function MainContentArea() {
-
   return (
     <main className="w-full h-full bg-slate-200">
-      <CB_Homepage />
+      <CB_Platters />
     </main>
   );
 }

@@ -44,7 +44,7 @@ export default function HeaderUserInfo() {
       <>
         <HeaderButtonSingle
           label="Log In / Sign Up"
-          onClick={() => setShowAuthModal(true)}
+          ButtonDestination="/auth"
         />
         {showAuthModal && (
           <AuthModal onClose={() => setShowAuthModal(false)} />
@@ -57,10 +57,10 @@ export default function HeaderUserInfo() {
   const userEmail = session.user?.email ?? "No Email";
 
   return (
-    <div className="flex items-center space-x-3">
+    <div className="flex items-center">
       {/* A simple avatar using the first letter(s) of the user's email */}
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-600 text-white">
-        {userEmail.slice(0, 2).toUpperCase()}
+      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-600 p-1 text-white">
+        {userEmail.slice(0, 1).toUpperCase()}
       </div>
 
       {/* User Email or Name */}

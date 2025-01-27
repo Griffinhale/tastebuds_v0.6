@@ -2,10 +2,8 @@
 import React from "react";
 import HeaderButtonSingle from "./HeaderButtonSingle";
 import HeaderButtonDouble from "./HeaderButtonDouble";
-import { useSelectedPage } from "../../context/SelectedPageContext";
 
 const HeaderButtons = () => {
-  const { selectedPage, setSelectedPage } = useSelectedPage();
 
   return (
     <div className="grid grid-flow-row grid-cols-2">
@@ -14,15 +12,12 @@ const HeaderButtons = () => {
           <HeaderButtonDouble
             labelTop="Tastebuds"
             labelBottom="A Pairing Platform"
-            isSelected={selectedPage === "home"}
-            onClick={() => setSelectedPage("home")}
           />
         </div>
         <div className="row-span-1">
           <HeaderButtonSingle
             label="Search"
-            isSelected={selectedPage === "search"}
-            onClick={() => setSelectedPage("search")}
+            ButtonDestination="/search"
           />
         </div>
       </div>
@@ -31,22 +26,19 @@ const HeaderButtons = () => {
         <div className="row-span-1">
           <HeaderButtonSingle
             label="Library"
-            isSelected={selectedPage === "library"}
-            onClick={() => setSelectedPage("library")}
+            ButtonDestination="/library"
           />
         </div>
         <div className="row-span-1">
           <HeaderButtonSingle
             label="Platters"
-            isSelected={selectedPage === "platters"}
-            onClick={() => setSelectedPage("platters")}
+            ButtonDestination="/platters"
           />
         </div>
         <div className="row-span-1">
           <HeaderButtonSingle
             label="Random" // or any other route
-            isSelected={selectedPage === "random"}
-            onClick={() => setSelectedPage("random")}
+            ButtonDestination="/random"
           />
         </div>
       </div>

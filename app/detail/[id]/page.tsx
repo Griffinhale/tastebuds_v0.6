@@ -1,8 +1,8 @@
 "use client";
 
-import CB_Homepage from "./components/homepage/CB_Homepage";
+import CB_ItemDetail from "@/app/components/detail/CB_ItemDetail";
 
-export default function Home() {
+export default function ItemDetail() {
   return (
     <MainPageContent />
   );
@@ -21,10 +21,9 @@ function MainPageContent() {
 }
 
 function MainContentArea() {
-
   return (
     <main className="w-full h-full bg-slate-200">
-      <CB_Homepage />
+      <CB_ItemDetail />
     </main>
   );
 }

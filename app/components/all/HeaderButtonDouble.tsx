@@ -1,11 +1,14 @@
 "use client";
 import React from 'react';
 import classNames from 'classnames';
+import Link from 'next/link';
+
 const HeaderButtonDouble = ({
   labelTop = 'Top Label',
   labelBottom = 'Bottom Label',
   isSelected = false,
   onClick = () => {},
+  ButtonDestination = "/"
 }) => {
   // Base classes that always apply
   const baseClasses = `
@@ -39,10 +42,12 @@ const HeaderButtonDouble = ({
   );
 
   return (
-    <button type="button" className={buttonClasses} onClick={onClick}>
-      <span>{labelTop}</span>
-      <span>{labelBottom}</span>
-    </button>
+    <Link href={ButtonDestination}>
+      <button type="button" className={buttonClasses} onClick={onClick}>
+        <span>{labelTop}</span>
+        <span>{labelBottom}</span>
+      </button>
+    </Link>
   );
 };
 
