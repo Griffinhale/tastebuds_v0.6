@@ -1,186 +1,169 @@
-# Tastebuds – DESIGN_DOC
-
+# Tastebuds – Refined Design Document
 ## Project Overview & Scope
+Tastebuds is a multi-route Next.js application that enables users to discover, curate, and pair various media items (movies, TV shows, albums, books, games) along with user-created platters. The app’s primary goal is to offer creative ways for users to search, filter, combine, and share media content.
 
-“Tastebuds” is a **Next.js** application that helps users **discover**, **curate**, and **pair** different media items (movies, albums, books, games, TV, and user-created **platters**). The core objective is to allow users to **search**, **filter**, **combine**, and **share** their favorite items creatively. 
+### Key points:
+Multi-route architecture: Each major feature (search, library, platters, etc.) has its own route for better usability, shareability (unique URLs), and SEO.
 
-We are now moving toward a **multi-route** structure in Next.js (App Router) so that each major feature (e.g. search, library, platters) has its own route (e.g. `/search`, `/library`) rather than a single-page setup. This approach improves usability, shareability (unique URLs), and SEO.
+Integrated Data Pipeline: External APIs (TMDB, Google Books, IGDB, MusicBrainz) feed into an internal DB (Supabase/Postgres) via upsert operations, allowing fast, consistent queries and caching.
 
----
+User Engagement: Users can manage their personal libraries, create custom platters, and (optionally) engage with social features such as reviews, ratings, and follows.
 
 ## Core Functionality Recap
 
-1. **Header & Navigation**  
-   - The user sees a consistent header with navigation buttons (`Header.tsx`, `HeaderButtons.tsx`).  
-   - A **User Info** component (`HeaderUserInfo.tsx`) handles log in / log out flows (via Supabase).
+### Header & Navigation
+Consistent UI: A persistent header displays navigation buttons (e.g. /home, /search, /library, /platters).
+User Authentication: Includes a User Info component (e.g., HeaderUserInfo.tsx) to manage log in/out (using Supabase).
+Active State: Highlights the currently active route.
 
-2. **Search**  
-   - **`CB_Search.tsx`** plus filter components let users find items.  
-   - Could query your local DB and fallback to external APIs if few results are found.  
-   - Displays results in multiple containers by filter combination.
+### Search
+Components:
+Main: CB_Search.tsx
+Filter components for medium types, genres, and moods.
+Behavior:
+Primary search queries run against the local DB.
+Fallback to external APIs if results are sparse.
+Results are displayed in multiple, filter-combined containers.
 
-3. **Platters**  
-   - **`CB_Platters.tsx`** for browsing or creating.  
-   - **`PlatterCategoryContainer.tsx`** for selecting (Mine, Saved, Popular, Random).  
-   - **`PlatterContainer.tsx`** for displaying items in “courses.”
+### Platters
+Components:
+Main: CB_Platters.tsx
+Containers: PlatterCategoryContainer.tsx (for Mine, Saved, Popular, Random) and PlatterContainer.tsx (for displaying items in “courses”).
+Behavior:
+Users can browse, create, and edit platters.
+Platters support multiple “courses” or sections.
 
-4. **Library**  
-   - **`CB_Library.tsx`** shows user-saved items in a grid or list.  
-   - **`LibraryCategoryContainer.tsx`** toggles item mediums.  
-   - **`LibraryItem.tsx`** displays covers, titles.
+### Library
+Components:
+Main: CB_Library.tsx
+Container: LibraryCategoryContainer.tsx (for filtering by medium)
+Display: LibraryItem.tsx (cards showing cover images and titles)
+Behavior:
+Displays items saved by the user.
+Supports different views (grid or list).
 
-5. **Item Detail**  
-   - **`CB_ItemDetail.tsx`** shows cover image, description, etc.  
-   - Sub-components in `detail/` break down the layout (cover, track list, genre tags, etc.).
+### Item Detail
+Components:
+Main: CB_ItemDetail.tsx
+Subcomponents: For cover images, track lists, genre tags, etc.
+Behavior:
+Provides a detailed view of an item (and potentially related platters).
 
-6. **Auth**  
-   - **`AuthModal.tsx`** provides a minimal sign-up/log-in flow (email/password, or OAuth).  
-   - The user’s session is managed by Supabase (`utils/supabase/client.ts` or `server.ts`).
+### Authentication
+Components:
+Auth Modal: AuthModal.tsx (for sign-up/log-in flows)
+Dedicated Auth Page: app/auth/page.tsx (if needed)
+Behavior:
+Uses Supabase for managing sessions and user data.
+Supports email/password and OAuth.
 
----
+## Routes & Navigation Structure
+Define distinct routes to separate concerns and improve UX:
 
-## Database & API
+Home (/home or /):
+Landing page (welcome message, trending items, or user feed).
 
-- **Local DB** (Supabase Postgres) storing `items`, medium-specific subtables, user relationships, etc.  
-- **Upsert** external API results (TMDB, Google Books, IGDB, MusicBrainz) into `items` to cache them for future queries.  
-- **Serverless Route** approach (e.g., `app/api/search/route.ts`) to unify local queries + external fetching.
+Search (/search):
+Renders <CB_Search /> with search input and filtering options.
+Should support serverless API routes to combine local DB queries with external API fallbacks.
 
----
+Library (/library):
+Renders <CB_Library /> showing user-saved items.
+Incorporates category filtering (e.g., by medium).
 
-## TODO
+Platters (/platters):
+Renders <CB_Platters /> for browsing and creating platters.
+Includes a category selector (Mine, Saved, Popular, Random).
 
-1. **Create Route Files**  
-   - `app/home/page.tsx` → Render `<CB_Homepage />`.  
-   - `app/search/page.tsx` → Render `<CB_Search />`.  
-   - `app/library/page.tsx` → Render `<CB_Library />`.  
-   - `app/profile/page.tsx` → Could display or edit user data.  
-   - `app/auth/page.tsx` → Render `<AuthModal />` or a dedicated form.  
-   - `app/platters/page.tsx` → Render `<CB_Platters />`.
+Profile (/profile):
+Displays user profile details, recent activity, and possibly an edit interface.
 
-2. **Hook Up Navigation**  
-   - Update `HeaderButtons.tsx` or `HeaderSimplified.tsx` to link to each route (e.g. “/search”, “/library”, “/platters”) with Next.js `<Link>` components instead of a single-page context.
+Auth (/auth):
+Dedicated login/sign-up page or a fallback for the Auth Modal.
 
-3. **Implement DB Queries**  
-   - In route handlers (`app/api/...`) or server components, fetch or upsert data as needed.  
-   - Possibly create **`server.ts`** imports for secure DB operations.
+Item Detail (Future - /detail/[id]):
+Dynamic route for detailed item views, including media-specific data and related platters.
 
-4. **Enhance Auth**  
-   - Add sign-up, log-in, or OAuth flows in **`AuthModal.tsx`** or `app/auth/page.tsx`.  
-   - Protect certain routes (e.g. library, platters) with a server-side session check or a client-guard approach.
+## Database & API Integration
 
-5. **Detail Routes**  
-   - Consider a dynamic route for item details at `app/detail/[id]/page.tsx`.  
-   - Render `<CB_ItemDetail />`, pulling data from your DB or external sources.
+### Local Database
+Backend: Supabase/Postgres.
+Schema Highlights:
+items: Central table for shared media info.
+Subtables: movies, shows, books, games, albums (each with medium-specific fields).
+Join Tables: item_genres, user_library, platter_items.
+Optional Social Tables: activities, follows, reviews, ratings.
 
-## Core Features & Routes
+### API Pipeline
+Upsert Mechanism:
+External API data (TMDB, Google Books, IGDB, MusicBrainz) is normalized and inserted/updated in the local DB.
+Use serverless routes (e.g., app/api/search/route.ts) to mediate between client queries and the internal DB.
+Caching Considerations:
+Consider using Redis or Supabase caching for popular/trending items.
+Support creative joins and flexible user-defined pairings across multiple media types.
 
-1. **Header & Navigation**  
-   - A shared header that links to `/home`, `/search`, `/platters`, `/library`, etc.  
-   - Shows the currently active route (highlighted or otherwise).  
-   - Includes an **auth** section (log in/out) and optional user profile link.
-
-2. **Search (`/search`)**  
-   - A search bar for entering terms.  
-   - A filter container to toggle mediums (music, movies, etc.) plus extra filters (genre, mood).  
-   - Search results laid out in columns (or containers) by filter combination.  
-   - Clicking a search result may open a detail view (e.g., a popup or link to `/detail/:id` in the future).
-
-3. **Platters (`/platters`)**  
-   - Users can browse or create “platters” (collections of items).  
-   - A category container (Mine, Saved, Popular, Random) to switch sets of platters.  
-   - Each platter can hold multiple “courses” (sections) with an arbitrary number of items.
-
-4. **Library (`/library`)**  
-   - Shows the user’s personal or global library of items (movies, albums, books, games, TV).  
-   - A category container to filter items by type, or view “All.”  
-   - Each item appears as a “library card” with a cover and title.
-
-5. **Profile (`/profile`)**  
-   - Displays user info like username, avatar, joined date, etc.  
-   - May include a summary of recent activities or followed users (in a future iteration).
-
-6. **Auth (`/auth`)**  
-   - A dedicated route for login and signup flows, or an embedded Auth Modal can route here as a fallback.  
-   - Integrates with Supabase’s Auth system.  
-
-7. **Home (`/home`)**  
-   - A landing or welcome page. Could be a feed of top or trending items, or a simple welcome message.  
-   - Possibly the default route (e.g. root `/` could redirect to `/home`).
-
-8. **Item Detail (Future)**  
-   - Might live at a route like `/detail/[id]` or `/items/[id]`.  
-   - Shows cover image, title, subtitle, creators, and detail modules (genres, tracklists, descriptions, etc.).  
-   - Also displays platters containing the item.  
-
----
 
 ## UI & Component Architecture
+Layouts & Shared Components
+Global Layout:
+Wraps all routes with a shared header (and footer if needed).
+Uses a layout file in the new App Router (e.g., app/layout.tsx).
+Component Organization
+Reusable Components:
+Navigation: Header.tsx, HeaderButtons.tsx, HeaderUserInfo.tsx
+Lists & Items: SearchItem.tsx, LibraryItem.tsx, PlatterContainer.tsx
+Filtering & Category Containers: SearchFilteringButton.tsx, PlatterCategoryContainer.tsx, LibraryCategoryContainer.tsx
+Popups: SearchContainerPopup.tsx (for additional item details or actions)
+State Management & Context
+Global State:
+Use React Context or a state management library for user sessions, search filters, or theme settings.
+Local Logic:
+Each page/component handles its own data fetching, either through Next.js server components or via client-side hooks (SWR, React Query).
 
-- **Layouts & Shared Components**  
-  - A top-level **layout** that includes the **header** (navigation) and a **footer**. Each route’s `page.tsx` is nested within this layout.  
+## Implementation TODOs & Prioritized Checklist
+### A. Route & Navigation Setup
+Create Route Files:
 
-- **Context & State**  
-  - We may still use contexts for global data (like user session or search filters).  
-  - Route-specific logic can go in each page or a custom hook.  
+app/home/page.tsx → Render <CB_Homepage />.
+app/search/page.tsx → Render <CB_Search />.
+app/library/page.tsx → Render <CB_Library />.
+app/profile/page.tsx → Render user profile details.
+app/auth/page.tsx → Render <AuthModal /> or a dedicated auth form.
+app/platters/page.tsx → Render <CB_Platters />.
+Hook Up Navigation:
 
-- **Reusable Subcomponents**  
-  - **Buttons** (`HeaderButtonSingle`, `HeaderButtonDouble`).  
-  - **Filtering** (`SearchFilteringButton`, `PlatterCategoryContainer`, `LibraryCategoryContainer`).  
-  - **List Items** (`SearchItem`, `LibraryItem`, `PlatterContainer`).  
-  - **Popups** (`SearchContainerPopup`) for quick details or actions.
+Update navigation components (e.g., HeaderButtons.tsx) to use Next.js <Link> components.
+Ensure each button correctly routes to /home, /search, /library, /platters, etc.
 
----
+### B. API & Database Integration
+Implement DB Queries:
+Develop serverless API routes in app/api/ to fetch, upsert, and update data.
+Create secure DB utility functions (e.g., in a shared server.ts) for internal operations.
+Re-integrate external API calls:
+Query external APIs when local results are insufficient.
+Upsert external data into the internal DB for caching and consistency.
 
-## Database & API Considerations
+### C. Auth & Protected Routes
+Enhance Authentication:
+Integrate Supabase authentication in AuthModal.tsx and/or app/auth/page.tsx.
+Implement session checks in server components or API routes to protect sensitive pages (e.g., Library, Platters, Profile).
 
-- **Relational Database** (Supabase / Postgres)  
-  - Central `items` table for all media types.  
-  - Medium-specific subtables (`movies`, `shows`, `books`, `games`, `albums`).  
-  - `platters` table, plus `platter_items` for many-to-many with courses.  
-  - `user_library` for user-saved items.  
-  - Optional social features: `activities`, `follows`, `reviews`, `ratings`.
+### D. Detail & Dynamic Routing
+Create Dynamic Detail Routes:
+Set up a dynamic route (e.g., app/detail/[id]/page.tsx) for item details.
+Render <CB_ItemDetail /> with data loaded from the internal DB (or external API as fallback).
 
-- **Caching & Distribution**  
-  - Potentially cache popular or trending items in Redis or within Supabase’s built-in caching.  
-  - “Creative joins” across mediums, genres, moods for flexible user-defined pairings.
+### E. UI Enhancements & Component Refinement
+Review & Refine Components:
+Ensure consistent styling and responsive design.
+Verify that shared components (header, footer, navigation) integrate seamlessly across all pages.
+Build reusable filtering, list, and popup components to reduce redundancy.
 
-- **External APIs**  
-  - Integrate with external data providers (TMDB, MusicBrainz, Google Books, IGDB) to populate or update item info.  
-  - Normalize data into the local schema for consistent queries and caching.
-
----
-
-## Summary
-
-We have a **multi-route** Next.js structure that provides clear navigation (`/home`, `/search`, `/library`, `/platters`, `/profile`, `/auth`) while retaining a cohesive UI. The **header** coordinates page transitions, and each route handles its specific logic (search, library display, platter management, etc.). Database integration remains consistent across routes, focusing on relational best practices and caching for performance.
-
----
-
-## TODO
-
-1. **Create `/search` Route**  
-   - Implement a page that renders the **Search** component, filter containers, and results.  
-   - May use a serverless function or client-side fetch to query local DB + external APIs.
-
-2. **Create `/library` Route**  
-   - Show the user’s library of items, with categories for different media.  
-   - Integrate with Supabase for real data in `user_library`.
-
-3. **Create `/profile` Route**  
-   - Display user information, possibly pulling from a `profiles` table or Supabase `auth.users`.  
-   - Include an option to edit user details or view user-specific data.
-
-4. **Create `/auth` Route**  
-   - Dedicated sign-up / login page (or embed the modal).  
-   - Hooks into Supabase for email/password, OAuth, or other forms of auth.
-
-5. **Create `/platters` Route**  
-   - Page for browsing, creating, and editing user platters.  
-   - Integrate `PlatterCategoryContainer` (Mine, Saved, Popular, Random).
-
-6. **Create `/home` Route**  
-   - A simple landing page (welcome, trending items, call-to-action, or user feed).  
-   - Could serve as the default page for “/”.
-   
-7. **Create `/detail` Route**  
-   - Dynamic child routes based off item id so that detail links can be shared  
+## Summary & Next Steps
+Architecture: We are moving to a multi-route structure with clear separation between features (search, library, platters, etc.) for better UX and SEO.
+Data Flow: External API data is now funneled into an internal DB (via Supabase), with serverless routes handling the unification of local queries and external fallback.
+UI & Navigation: A shared header/navigation system ensures consistency, while each route handles its specific logic and component rendering.
+Immediate Priorities:
+Set up and verify all routes.
+Re-integrate external API calls into the DB pipeline.
+Ensure secure and smooth data fetching with appropriate caching and upsert logic.
