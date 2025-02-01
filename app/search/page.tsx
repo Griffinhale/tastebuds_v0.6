@@ -1,34 +1,39 @@
 // app/search/page.tsx (Server Component)
+import React from "react";
 
-import { Suspense } from "react";
-//import LocalSearchResults from "./LocalSearchResults";
-//import ExternalSearchResults from "./ExternalSearchResults";
-
-// This is the route’s entry point. Next.js can show loading.tsx
-// while it fetches the code + SSR data.
 export default async function SearchPage() {
-  // We could read a query param from the URL:
-  // e.g., const searchTerm = searchParams.get("q") || "";
-  // For simplicity, let's hardcode or assume we have one
+  // Hardcode the search term (in a real app, you might read this from URL query params)
   const searchTerm = "avengers";
-  const req = new Request(searchTerm)
-  const d = await fetch(req);
-  console.log(d);
+  
+  // Fetch the search results from the API route.
+  // The relative URL works for server components.
+  const response = await fetch(`/api/search?query=${encodeURIComponent(searchTerm)}`, {
+    // Disable any caching to always get the fresh dummy response.
+    cache: "no-store",
+  });
+  const { results } = await response.json();
+
   return (
     <div className="grid min-h-screen grid-rows-[auto_1fr_auto] gap-16 p-8 sm:p-20">
       <h1 className="mb-4 text-xl font-bold">Search Results for {searchTerm}</h1>
-
-      {/* Suspense #1: local results stream in first */}
-      <Suspense fallback={<p>Loading local results...</p>}>
-        {/* 
-          <LocalSearchResults /> is also a server component that 
-          queries Supabase and returns a list of items 
-        */}
-      </Suspense>
-
-      {/* Suspense #2: external results stream in after local finishes or in parallel */}
-      <Suspense fallback={<p>Loading external results...</p>}>
-      </Suspense>
+      
+      {/* Display the combined results */}
+      <ul>
+        {results.map((item: any) => (
+          <li key={item.externalId || item.id}>
+            <h2>{item.title}</h2>
+            <p>Type: {item.type}</p>
+            <p>{item.description}</p>
+            {item.coverUrl && (
+              <img
+                src={item.coverUrl}
+                alt={item.title}
+                style={{ maxWidth: "200px" }}
+              />
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
