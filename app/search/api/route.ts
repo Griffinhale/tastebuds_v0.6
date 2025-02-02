@@ -1,118 +1,80 @@
-// app/api/search/route.ts
+// app/search/api/route.ts
 "use server";
-import { NextResponse } from 'next/server';
-import { createClient } from '@/app/utils/supabase/server';
+
+import { NextResponse } from "next/server";
+import { createClient } from "@/app/utils/supabase/server";
+import { fetchFromExternalAPIs, ExternalItem } from "./external";
 
 /**
- * GET /api/search?query=<search-term>&type=<optional-type>
+ * GET /search/api?query=<search-term>&type=<optional-type>
  *
- * 1. Uses Supabase’s server client (with cookies) to query the local DB.
- * 2. If the local results are below a threshold, falls back to external APIs.
- * 3. Upserts any new external items into the local DB.
- * 4. Returns the combined results.
+ * 1. Query the local Supabase DB for matching items.
+ * 2. If the number of local results is below a threshold, call external APIs.
+ * 3. For each external result, upsert it into the local DB if it does not exist.
+ * 4. Return the combined list of results.
  */
 export async function GET(request: Request) {
   // Create the Supabase server client using cookies from the request.
   const supabase = await createClient();
 
-  // Parse query parameters from the URL.
+  // Parse query parameters.
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get('query') || '';
-  const typeFilter = searchParams.get('type') || undefined;
+  const query = searchParams.get("query") || "";
+  const typeFilter = searchParams.get("type") || undefined;
 
   if (!query) {
     return NextResponse.json(
-      { error: 'Missing search query parameter' },
+      { error: "Missing search query parameter" },
       { status: 400 }
     );
   }
 
-  // 1. Build the query for the local DB (cached results) from the 'items' table.
-  let queryBuilder = supabase.from('items').select().ilike('title', `%${query}%`);
+  // Query the local 'items' table.
+  let queryBuilder = supabase.from("items").select().ilike("title", `%${query}%`);
   if (typeFilter) {
-    queryBuilder = queryBuilder.eq('type', typeFilter);
+    queryBuilder = queryBuilder.eq("type", typeFilter);
   }
   const { data: localData, error: localError } = await queryBuilder;
-
   if (localError) {
-    console.error('Supabase query error:', localError);
+    console.error("Supabase query error:", localError);
   }
   const results = localData || [];
 
-  // 2. If local results are fewer than our threshold, fetch from external APIs.
+  // If local results are below the threshold, call external APIs.
   const threshold = 5;
-  let externalResults: any[] = [];
+  let externalResults: ExternalItem[] = [];
   if (results.length < threshold) {
     externalResults = await fetchFromExternalAPIs(query, { type: typeFilter });
 
-    // 3. For each external result, upsert into the local DB if not already present.
+    // Upsert each external result into the local DB if it doesn't already exist.
     for (const extItem of externalResults) {
-      // Check for an existing record using a unique external identifier.
       const { data: existingData } = await supabase
-        .from('items')
-        .select('id')
-        .eq('external_id', extItem.externalId)
+        .from("items")
+        .select("id")
+        .eq("external_id", extItem.externalId)
         .maybeSingle();
 
       if (!existingData) {
-        // Map external item fields to your local DB schema.
-        const { error: insertError } = await supabase
-          .from('items')
-          .insert([
-            {
-              title: extItem.title,
-              type: extItem.type,
-              description: extItem.description,
-              // Convert the external release date if present.
-              release_date: extItem.releaseDate
-                ? new Date(extItem.releaseDate).toISOString()
-                : null,
-              cover_url: extItem.coverUrl || null,
-              external_id: extItem.externalId,
-              // Add any additional fields as needed.
-            },
-          ]);
-
+        const { error: insertError } = await supabase.from("items").insert([
+          {
+            title: extItem.title,
+            type: extItem.type,
+            description: extItem.description,
+            release_date: extItem.releaseDate
+              ? new Date(extItem.releaseDate).toISOString()
+              : null,
+            cover_url: extItem.coverUrl || null,
+            external_id: extItem.externalId,
+          },
+        ]);
         if (insertError) {
-          console.error('Error upserting external item:', insertError);
+          console.error("Error upserting external item:", insertError);
         }
       }
     }
   }
 
-  // 4. Combine local and external results.
-  // (Optionally, you could deduplicate items if needed.)
+  // Combine local and external results.
   const combinedResults = [...results, ...externalResults];
-
   return NextResponse.json({ results: combinedResults });
-}
-
-/**
- * Stub for fetching data from external APIs.
- * Replace this stub with your actual API calls (e.g., TMDB, IGDB, etc.)
- * and standardize the output to match your local schema.
- */
-async function fetchFromExternalAPIs(
-  query: string,
-  filters: { type?: string }
-): Promise<any[]> {
-  // Example: Call multiple APIs in parallel and combine the results.
-  // const [tmdbData, igdbData] = await Promise.all([
-  //   fetchTmdbData(query, filters),
-  //   fetchIgdbData(query, filters),
-  // ]);
-  // return [...tmdbData, ...igdbData];
-
-  // For demonstration purposes, return a dummy external item.
-  return [
-    {
-      externalId: 'ext-1', // Ensure this key matches what you check in the DB.
-      title: 'External Title 1',
-      type: filters.type || 'movie',
-      description: 'Fetched from external API.',
-      releaseDate: '2021-01-01',
-      coverUrl: 'https://example.com/cover.jpg',
-    },
-    // You can add more dummy items as needed.
-  ];
 }

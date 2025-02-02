@@ -195,7 +195,7 @@ Create Route Files:
 
 app/home/page.tsx → Render <CB_Homepage />.
 
-app/search/page.tsx → Render <CB_Search />.
+app/search/page.tsx → Render <CB_Search />. (updated to use search/api?query)
 
 app/library/page.tsx → Render <CB_Library />.
 
